@@ -1,5 +1,12 @@
 package org.example.lab8_gtics_practica_session_security.config;
 
+//Creamos model que es como un entity
+//es donde ponemos los objetos que queremos guardar en la session
+
+//Creamos un songService
+//AdminSongController
+//En templates creamos admin->songs.html
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,26 +40,39 @@ public class WebSecurityConfig {
         return users;
     }
 
+    //Cambiamos filterChain
     @Bean
+    // Configuración principal del escudo de seguridad de la aplicación
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        // 1. Configuración del formulario de Login personalizado
+        // 1. Configuración del Login personalizado
         http.formLogin(form -> form
-                .loginPage("/loginForm")             // Ruta para mostrar mi HTML bonito de login
-                .loginProcessingUrl("/processLogin") // Buzón invisible donde Spring procesa y valida los datos
-                .defaultSuccessUrl("/dashboard", true) // Si el login es correcto, redirige siempre al dashboard
-                .permitAll());                       // Permite que cualquiera pueda ver la pantalla de login
+                .loginPage("/loginForm")             // Muestra mi propio HTML de login en lugar del genérico de Spring
+                .loginProcessingUrl("/processLogin") // Buzón invisible que procesa y valida las credenciales automáticamente
+                .defaultSuccessUrl("/dashboard", true) // Si el usuario inicia sesión con éxito, lo manda directo al dashboard
+                .permitAll());                       // Permite que todo el público pueda ver la pantalla de login
 
-        // 2. Control de accesos y permisos de la aplicación (Reglas de tránsito)
+        // 2. Configuración del Logout (Cierre de sesión)
+        http.logout(logout -> logout
+                .logoutSuccessUrl("/loginForm?logout") // Al salir, lo regresa al login y le añade un aviso en la URL
+                .deleteCookies("JSESSIONID", "SESSION") // Borra las "galletas" de identidad guardadas en el navegador
+                .invalidateHttpSession(true));       // Elimina los datos de la sesión activa en el servidor/base de datos
+
+        // 3. Control de accesos y permisos por Roles (Reglas de tránsito)
         http.authorizeHttpRequests(auth -> auth
-                // Rutas públicas: login, registro y carpetas de diseño (CSS/JS) para que no se rompa la interfaz
+                // Rutas públicas: cualquiera puede ver el login, el registro y las carpetas de diseño (CSS/JS)
                 .requestMatchers("/loginForm", "/register", "/css/**", "/js/**").permitAll()
-                // Candado general: cualquier otra ruta de la app requiere iniciar sesión obligatoriamente
+                // Control estricto: solo los usuarios con el rol oficial 'ROLE_ADMIN' entran a las rutas /admin
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // Control estricto: solo los usuarios con el rol oficial 'ROLE_USER' entran a las rutas /user
+                .requestMatchers("/user/**").hasRole("USER")
+                // Candado general: cualquier otra ruta de la aplicación requiere estar logueado obligatoriamente
                 .anyRequest().authenticated());
 
-
+        // Construye y activa toda esta configuración en el contenedor de Spring
         return http.build();
     }
+
 
 }
 
@@ -80,3 +100,17 @@ public class WebSecurityConfig {
 //
 //INSERT INTO roles(name) VALUES ('ROLE_ADMIN');
 //INSERT INTO roles(name) VALUES ('ROLE_USER');
+
+
+
+//USE minispotify_db;
+//
+//INSERT INTO users(username, password, enabled, role_id) VALUES
+//('admin', '$2b$10$dzH29pi/OrkMWD81804RO.PbI7iAU.JCmKg.fSW4CWnCH4oDQUe3W', TRUE,
+//    (SELECT id FROM roles WHERE name = 'ROLE_ADMIN')),
+//('user1', '$2b$10$KkpVlwpTGrROTbRV2UUDIOK1kQIYXuWHwZA8OeixQFBq7Uu7yD.2m', TRUE,
+//    (SELECT id FROM roles WHERE name = 'ROLE_USER'));
+//
+//
+//admin / admin123 (rol ADMIN)
+//user1 / user123 (rol USER)
