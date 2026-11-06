@@ -3,9 +3,10 @@ package org.example.lab8_gtics_practica_session_security.config;
 //Creamos model que es como un entity
 //es donde ponemos los objetos que queremos guardar en la session
 
-//Creamos un songService
-//AdminSongController
-//En templates creamos admin->songs.html
+//Creamos un PlaylistEntry en model
+//PlaylistService
+//UserPLaylistController
+//user->playlist.html
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
